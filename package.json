@@ -1,0 +1,13 @@
+{
+  "name": "bioengineering-clarion-bot",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "bottender": "0.15.17",
+    "nodemon": "1.19.0"
+  }
+}
