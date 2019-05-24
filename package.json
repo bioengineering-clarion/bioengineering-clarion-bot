@@ -7,7 +7,12 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@tensorflow/tfjs": "^1.1.2",
+    "@tensorflow/tfjs-node": "^1.1.2",
     "bottender": "0.15.17",
+    "canvas": "^2.5.0",
+    "ngrok": "^3.1.1",
+    "node-fetch": "^2.6.0",
     "nodemon": "1.19.0"
   }
 }
