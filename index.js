@@ -6,6 +6,7 @@ const { TelegramBot, FileSessionStore } = require('bottender');
 const { createServer } = require('bottender/express');
 const config = require('./bottender.config.js').telegram;
 const Handlers = require('./handlers');
+const Local = require('./local/local.js');
 
 const bot = new TelegramBot({
 	accessToken: config.accessToken,
@@ -18,9 +19,6 @@ const status_vocab = {
 	'repeat': 3
 }
 
-
-//const locals_info = utils.readFilesSync('local')
-const locals =  require('./local/local.json')
 
 class ReplyMarkup {
 	constructor() {
@@ -61,44 +59,22 @@ class HandlerManager {
 		this.handlers = handlers
 	}
 
-	use(context) {
+	async use(context, callbackData, defaultCallbackData) {
 		let state = context.state;
 		let result = {
 			'text': 'Technical problems :(',
 			'status': status_vocab.continue,
 			'opts': {}
 		}
-		let local = (state.lang) ? locals[state.lang] : null;
-		let event = context.event || null;
-		let payload = event ? event.payload : '';
-		let callbackData = {
-			handler: 'default',
-			action: 'default',
-			value: 'default',
-			type: 'default'
-		}
-		if (!local) {
-			callbackData.handler = 'local';
-			callbackData.action = 'def';
-		}
-		if (payload) {
-			callbackData = ReplyMarkup.parseCallbackData(payload);
-		}
-		result = this.handlers.reduce((prevRes, handler, index) => {
-			console.log(
-				'callbackData - ', callbackData,
-				'context - ', context,
-				'state - ', context.state
-			)
-			if ((prevRes.status == status_vocab.interrapt) ||
-				(prevRes.status == status_vocab.repeat)) {
-				return prevRes
+		let local = (state.lang) ? new Local(state.lang) : null;
+		for (let i = 0; i < this.handlers.length; i += 1) {
+			let handler = this.handlers[i];
+			if ((result.status == status_vocab.interrapt) ||
+				(result.status == status_vocab.repeat)) {
+				continue;
 			}
-			let handlerRes = handler.handle(prevRes, callbackData, context, local);
-			console.log('res -',handlerRes || prevRes)
-			console.log('-----------------------------')
-			return handlerRes || prevRes
-		},  result)
+			result = await handler.handle(result, callbackData, context, local, defaultCallbackData);
+		}
 		return result
 	}
 }
@@ -112,7 +88,7 @@ diagnosticParams = Object.assign(handlerParams, {
 	skinModelPath: 'file://vendors/Skin-Lesion-Analyzer/final_model_kaggle_version1/model.json'
 });
 const handlerManager = new HandlerManager([
-	new Handlers.LocalHandler(handlerParams),
+	new Handlers.LocalHandler(Object.assign(handlerParams, {localJson: Local.localJson})),
 	new Handlers.DiagnosticHandler(diagnosticParams),
 	new Handlers.DefaultHandler(handlerParams)
 ])
@@ -124,40 +100,34 @@ bot.setInitialState({
 
 bot.onEvent(async context => {
 	let result
+	let defaultCallbackData = {
+		handler: 'default',
+		action: 'default',
+		value: 'default',
+		type: 'default'
+	}
+	let callbackData = Object.assign({}, defaultCallbackData);
+	let event = context.event || null;
+	let payload = event ? event.payload : '';
+	if (payload) {
+		callbackData = ReplyMarkup.parseCallbackData(payload);
+	} else if (!context.state.lang) {
+		callbackData.handler = 'local';
+		callbackData.action = 'ask';
+	}
 	do {
-		result = handlerManager.use(context)
+		result = await handlerManager.use(context, callbackData, defaultCallbackData);
 	} while (result.status == status_vocab.repeat);
-	await context.sendMessage(result.text, result.opts);
-	// const opts = {
-	// 	// remove_keyboard: true,
-	// 	reply_markup: {
-	// 	  inline_keyboard: [
-	// 		[
-	// 		  {
-	// 			text: 'Edit Text',
-	// 			callback_data: 'edit'
-	// 		  }
-	// 		]
-	// 	  ],
-	// 		// keyboard: [
-	// 		// 	['Opt1'],
-	// 		// 	['Opt2']
-	// 		// ],
-	// 		// one_time_keyboard: true,
-	// 	//   remove_keyboard: true
-	// 	}
-	//   };
-
-	// // console.log(context)
-	// if (context.event.isPhoto) {
-	// 	await context.sendMessage('I know this is a photo.');
-	// } else if (
-	// 	context.event.callbackQuery === 'A_DEVELOPER_DEFINED_CALLBACK_QUERY'
-	// ) {
-	// 	await context.sendMessage('I know this is a callback query.');
-	// } else {
-	// 	await context.sendMessage('I do not understand.');
-	// }
+	result.opts.parse_mode = 'Markdown'
+	result.opts.disable_web_page_preview = true;
+	result.opts.disable_notification = true;
+	//result.text = '[Привет](http://t.com)'
+	if (result.photo) {
+		result.opts.caption = result.text;
+		await context.sendPhoto(result.photo, result.opts);
+	} else {
+		await context.sendMessage(result.text, result.opts);
+	}
 });
 
 bot.createLongPollingRuntime({

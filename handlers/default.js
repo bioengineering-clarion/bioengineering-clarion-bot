@@ -6,17 +6,20 @@ class DefaultHandler extends Handler {
 		this.name = 'default';
 	}
 
-	handle(result, callbackData, context, local) {
-		result.text = local.bot['description'];
+	handle(result, callbackData, context, local, defaultCallbackData) {
+		if (callbackData.handler !== this.name) {
+			return result;
+		}
+		result.text = local.get('bot.description');
 		let replyMarkup = new this.ReplyMarkup(this.name);
 		replyMarkup.addButton({
             handler: 'diagnostic',
-            text: local.bot['skin_diagnostic_btn'],
+            text: local.get('bot.diagnostic.skin.enter_btn'),
             action: 'skin'
         });
         replyMarkup.addButton({
             handler: 'profile',
-            text: local.bot['profile'],
+            text: local.get('bot.profile'),
             action: 'open'
         })
 		result.opts = replyMarkup.build();

@@ -4,13 +4,13 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const {Image, createCanvas, ImageData} = require('canvas');
 const SKIN_CLASSES = {
-    0: 'akiec, Actinic Keratoses (Solar Keratoses) or intraepithelial Carcinoma (Bowen’s disease)',
-    1: 'bcc, Basal Cell Carcinoma',
-    2: 'bkl, Benign Keratosis',
-    3: 'df, Dermatofibroma',
-    4: 'mel, Melanoma',
-    5: 'nv, Melanocytic Nevi',
-    6: 'vasc, Vascular skin lesion'
+    0: 'akiec',
+    1: 'bcc',
+    2: 'bkl',
+    3: 'df',
+    4: 'mel',
+    5: 'nv',
+    6: 'vasc'
 };
 
 class DiagnosticHandler extends Handler {
@@ -24,35 +24,86 @@ class DiagnosticHandler extends Handler {
             this.skinModel = model;
         });
     }
-	handle(result, callbackData, context, local) {
+
+	async handle(result, callbackData, context, local, defaultCallbackData) {
         if (callbackData.handler == this.name) {
+            context.setState({diagnostic: null});
             switch (callbackData.action) {
                 case 'skin':
-                    result.text = local.bot['skin_load_photo'];
-                    result.status =  this.status_vocab.interrapt;
-                    context.setState({diagnostic: 'wait_skin_photo'});
+                    result = this.defaultAsk(result, context, local);
+                    result = this.addFooter(result, context, local);
+                    break;
+                case 'skin_more':
+                    result.text = local.get('bot.diagnostic.skin.more');
+                    let replyMarkup = new this.ReplyMarkup(this.name);
+                    replyMarkup.addButton({
+                        handler: 'diagnostic',
+                        text: local.get('bot.back_btn'),
+                        action: 'skin'
+                    });
+                    result.opts = replyMarkup.build();
+                    break;
+                case 'back':
+                    Object.assign(callbackData, defaultCallbackData);
+                    result.status = this.status_vocab.repeat;
                     break;
             }
             return result;
         }
+
         if (context.state.diagnostic) {
             switch (context.state.diagnostic) {
                 case 'wait_skin_photo':
+                    let skinLocalPath = 'bot.diagnostic.skin.predictions';
                     if (context.event.isPhoto) {
                         if (this.skinModel) {
-                            this._processSkinPhoto(context.event.photo);
+                            result.text = '';
+                            let predictions = await this._processSkinPhoto(context.event.photo);
+                            predictions.forEach(pred => {
+                                let percent = (pred.probability * 100).toFixed(2);;
+                                className = local.get(skinLocalPath + '.' + pred.className);
+                                result.text += `${percent}% - ${className} \n`;
+                            });
+                            result.status = this.status_vocab.interrapt;
+                            //context.setState({diagnostic: null});
                         } else {
-                            result.text = local.bot['model_loading_message'];
+                            result.text = local.get('bot.diagnostic.model_loading_message');
                         }
+                        return result;
                     } else {
-                        result.text = local.bot['wait_skin_photo'];
+                        return this.defaultAsk(result, context, local);
                     }
-
-                    result.status =  this.status_vocab.interrapt;
                     break;
             }
-            return result;
         }
+
+        return result;
+    }
+
+    defaultAsk(result, context, local) {
+        result.text = local.get('bot.diagnostic.skin.description');
+        result.photo = 'https://i.ibb.co/b1M0zGS/samplepic.jpg'
+        result.status =  this.status_vocab.interrapt;
+        //context.setState({diagnostic: 'wait_skin_photo'});
+
+        return result;
+    }
+
+    addFooter(result, context, local) {
+        let replyMarkup = new this.ReplyMarkup(this.name);
+        replyMarkup.addButton({
+            handler: 'diagnostic',
+            text: local.get('bot.back_btn'),
+            action: 'back'
+        });
+        replyMarkup.addButton({
+            handler: 'diagnostic',
+            text: local.get('bot.more_btn'),
+            action: 'skin_more'
+        });
+        result.opts = replyMarkup.build();
+
+        return result
     }
 
     async _processSkinPhoto(photos) {
@@ -64,7 +115,7 @@ class DiagnosticHandler extends Handler {
         tensor = this._cropTensor(tensor, photoInfo);
         let result = await this._skinPredict(tensor);
 
-        await this._writeToFile(tensor, createCanvas(tensor.shape[0], tensor.shape[1]));
+        return result;
     }
 
     async _skinPredict(tensor) {
@@ -75,7 +126,7 @@ class DiagnosticHandler extends Handler {
             .div(offset)
             .expandDims();
         let predictions = await this.skinModel.predict(tensor).data();
-        let top5 = Array.from(predictions)
+        let sortedPredictions = Array.from(predictions)
             .map(function (p, i) { // this is Array.map
                 return {
                     probability: p,
@@ -85,7 +136,7 @@ class DiagnosticHandler extends Handler {
                 return b.probability - a.probability;
             });
 
-        return top5;
+        return sortedPredictions;
     }
 
     async _getPhotoPath(photoInfo) {
