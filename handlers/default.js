@@ -11,7 +11,7 @@ class DefaultHandler extends Handler {
 			return result;
 		}
 		result.text = local.get('bot.description');
-		let replyMarkup = new this.ReplyMarkup(this.name);
+		let replyMarkup = new this.ReplyMarkup();
 		replyMarkup.addButton({
             handler: 'diagnostic',
             text: local.get('bot.diagnostic.skin.enter_btn'),
@@ -19,7 +19,7 @@ class DefaultHandler extends Handler {
         });
         replyMarkup.addButton({
             handler: 'profile',
-            text: local.get('bot.profile'),
+            text: local.get('bot.profile_btn'),
             action: 'open'
         })
 		result.opts = replyMarkup.build();

@@ -31,11 +31,11 @@ class DiagnosticHandler extends Handler {
             switch (callbackData.action) {
                 case 'skin':
                     result = this.defaultAsk(result, context, local);
-                    result = this.addFooter(result, context, local);
+                    context.setState({diagnostic: 'wait_skin_photo'});
                     break;
                 case 'skin_more':
                     result.text = local.get('bot.diagnostic.skin.more');
-                    let replyMarkup = new this.ReplyMarkup(this.name);
+                    let replyMarkup = new this.ReplyMarkup();
                     replyMarkup.addButton({
                         handler: 'diagnostic',
                         text: local.get('bot.back_btn'),
@@ -55,17 +55,17 @@ class DiagnosticHandler extends Handler {
             switch (context.state.diagnostic) {
                 case 'wait_skin_photo':
                     let skinLocalPath = 'bot.diagnostic.skin.predictions';
-                    if (context.event.isPhoto) {
+                    if (context.event.isPhoto || context.event.isDocument) {
                         if (this.skinModel) {
                             result.text = '';
-                            let predictions = await this._processSkinPhoto(context.event.photo);
+                            let predictions = await this._processSkinPhoto(context.event.photo || context.event.document);
                             predictions.forEach(pred => {
                                 let percent = (pred.probability * 100).toFixed(2);;
-                                className = local.get(skinLocalPath + '.' + pred.className);
+                                let className = local.get(skinLocalPath + '.' + pred.className);
                                 result.text += `${percent}% - ${className} \n`;
                             });
                             result.status = this.status_vocab.interrapt;
-                            //context.setState({diagnostic: null});
+                            // context.setState({diagnostic: null});
                         } else {
                             result.text = local.get('bot.diagnostic.model_loading_message');
                         }
@@ -84,13 +84,13 @@ class DiagnosticHandler extends Handler {
         result.text = local.get('bot.diagnostic.skin.description');
         result.photo = 'https://i.ibb.co/b1M0zGS/samplepic.jpg'
         result.status =  this.status_vocab.interrapt;
-        //context.setState({diagnostic: 'wait_skin_photo'});
+        result = this.addFooter(result, context, local);
 
         return result;
     }
 
     addFooter(result, context, local) {
-        let replyMarkup = new this.ReplyMarkup(this.name);
+        let replyMarkup = new this.ReplyMarkup();
         replyMarkup.addButton({
             handler: 'diagnostic',
             text: local.get('bot.back_btn'),
@@ -107,12 +107,19 @@ class DiagnosticHandler extends Handler {
     }
 
     async _processSkinPhoto(photos) {
-        let photoInfo = photos.find(element => {
-            return (element.height >= this.min_size) && (element.width >= this.min_size);
-        });
+        var photoInfo;
+        if (Array.isArray(photos)) {
+            photoInfo = photos.find(element => {
+                return (element.height >= this.min_size) && (element.width >= this.min_size);
+            });
+        } else {
+            photoInfo = photos;
+        }
         let photoPath = await this._getPhotoPath(photoInfo);
         let tensor = await this._photoPathToTensor(photoPath, photoInfo);
-        tensor = this._cropTensor(tensor, photoInfo);
+        tensor = this._cropTensor(tensor, {height: tensor.shape[0], width: tensor.shape[1]});
+
+        // this._writeToFile(tensor);
         let result = await this._skinPredict(tensor);
 
         return result;
@@ -157,21 +164,28 @@ class DiagnosticHandler extends Handler {
             img.onload = () => resolve()
             img.onerror = err => reject(err)
         });
-        const canvas = createCanvas(photoInfo.width, photoInfo.height);
+        // const download = require('image-downloader')
+        // await download.image({
+        //     url: `https://api.telegram.org/file/bot${accessToken}/${photoPath}`,
+        //     dest: 'res.jpg'
+        //   })
+        // TODO: Cache canvas operations.
+        const canvas = createCanvas(img.width, img.height);
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
         let tensor = tf.browser.fromPixels(canvas);
 
-        return tensor
+        return tensor;
     }
 
-    async _writeToFile(tensor, canvas) {
+    async _writeToFile(tensor) {
+        let canvas = createCanvas(tensor.shape[1], tensor.shape[0]);
         let bytes = await tf.browser.toPixels(tensor);
         const ctx = canvas.getContext('2d');
         const imageData = new ImageData(bytes, canvas.width, canvas.height);
         ctx.putImageData(imageData, 0, 0);
         var buf = canvas.toBuffer();
-        fs.writeFile('logo1.png', buf,  function(err){
+        fs.writeFile('res.jpg', buf,  function(err){
             if (err) throw err
             console.log('File saved.')
         })

@@ -4,8 +4,15 @@ class LocalHandler extends Handler {
 	constructor(paprams) {
 		super(paprams);
 		this.name = 'local';
-		this.isSetting = true;
 		this.locals = paprams.localJson;
+	}
+
+	static get isSetting() {
+		return true;
+	}
+
+	setSettingValue(context, value) {
+		context.setState({lang: value});
 	}
 
 	async handle(result, callbackData, context, local, defaultCallbackData) {
@@ -13,10 +20,10 @@ class LocalHandler extends Handler {
 			return result;
 		}
 		switch (callbackData.action) {
-			case 'ask':
+			case 'open':
 				return this.defaultAsk(result, context, local);
-			case 'set_lang':
-				context.setState({lang: callbackData.value});
+			case 'set_value':
+				this.setSettingValue(context, callbackData.value);
 				Object.assign(callbackData, defaultCallbackData);
 				result.status = this.status_vocab.repeat;
 				return result
@@ -30,10 +37,9 @@ class LocalHandler extends Handler {
 			replyMarkup.addButton({
 				handler: this.name,
 				text: local.name,
-				action: 'set_lang',
+				action: 'set_value',
 				value: localId
-			})
-
+			});
 		}
 		result.text = 'Choose language!';
 		result.opts = replyMarkup.build();

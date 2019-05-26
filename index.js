@@ -21,25 +21,55 @@ const status_vocab = {
 
 
 class ReplyMarkup {
-	constructor() {
-		this.opts = {
-			reply_markup: {
-				inline_keyboard: [[]]
-			}
-		};
+	constructor(opts) {
+		if (!opts) {
+			this.opts = {
+				reply_markup: {
+					inline_keyboard: [[]]
+				}
+			};
+		}
+		else {
+			this.opts = Object.assign({}, opts);
+		}
 		this.reply_markup = this.opts.reply_markup;
-		this.inline_keyboard = this.opts.reply_markup.inline_keyboard[0];
+		this.inline_keyboard = this.reply_markup.inline_keyboard[0];
+		this.paramMap = {
+			handler: 'h',
+			action: 'a',
+			value: 'v',
+			type: 't'
+		}
 	}
 
 	addButton({handler, text, action, value}) {
-		this.inline_keyboard.push({text, callback_data: this.createCallbackData(handler, action, value, 'button')});
+		this.inline_keyboard.push({text, callback_data: this.createCallbackData({handler, action, value, type: 'button'})});
+	}
+
+	nextLine() {
+		this.reply_markup.inline_keyboard.push([]);
+		let lastIdx = this.reply_markup.inline_keyboard.length - 1;
+		this.inline_keyboard = this.reply_markup.inline_keyboard[lastIdx];
+	}
+
+	changeParam(paramName, value, isPrefix=false) {
+		this.inline_keyboard = this.inline_keyboard.map(item => {
+			let callbackData = ReplyMarkup.parseCallbackData(item.callback_data);
+			callbackData[paramName] = isPrefix ? value + callbackData[paramName] : value;
+			item.callback_data = this.createCallbackData(callbackData);
+			return item;
+		})
+	}
+
+	addParamPrefix(paramName, prefix) {
+		this.changeParam(paramName, prefix, true);
 	}
 
 	build() {
 		return this.opts
 	}
 
-	createCallbackData(handler, action, value, type) {
+	createCallbackData({handler, action, value, type}) {
 		return JSON.stringify({h: handler, a: action, v: value || '', t: type});
 	}
 
@@ -79,17 +109,19 @@ class HandlerManager {
 	}
 }
 
-handlerParams = {
+const handlerParams = {
 	status_vocab,
 	ReplyMarkup,
 	config
 }
-diagnosticParams = Object.assign(handlerParams, {
+const diagnosticParams = Object.assign(handlerParams, {
 	skinModelPath: 'file://vendors/Skin-Lesion-Analyzer/final_model_kaggle_version1/model.json'
 });
+let localHandler = new Handlers.LocalHandler(Object.assign(handlerParams, {localJson: Local.localJson}));
 const handlerManager = new HandlerManager([
-	new Handlers.LocalHandler(Object.assign(handlerParams, {localJson: Local.localJson})),
+	localHandler,
 	new Handlers.DiagnosticHandler(diagnosticParams),
+	new Handlers.ProfileHandler(Object.assign(handlerParams, {settings: [localHandler]})),
 	new Handlers.DefaultHandler(handlerParams)
 ])
 
@@ -113,7 +145,7 @@ bot.onEvent(async context => {
 		callbackData = ReplyMarkup.parseCallbackData(payload);
 	} else if (!context.state.lang) {
 		callbackData.handler = 'local';
-		callbackData.action = 'ask';
+		callbackData.action = 'open';
 	}
 	do {
 		result = await handlerManager.use(context, callbackData, defaultCallbackData);

@@ -1,11 +1,12 @@
 {
     "ru": {
         "name": "Русский",
+        "change_lang_btn": "Сменить язык",
         "bot": {
             "id": "ru",
             "description": "__FILE__:description_ru.md",
-            "profile": "Профиль",
-            "back_btn": "< Назад",
+            "profile_btn": "Профиль",
+            "back_btn": "◀️ Назад",
             "more_btn": "Подробрней",
             "diagnostic": {
                 "model_loading_message": "Нейросеть в прцессе загрузки, попрбуйте снова через несколько минут.",
@@ -24,6 +25,10 @@
                     }
 
                 }
+            },
+            "profile": {
+                "description": "Настройки профиля.",
+                "local_btn": "Сменить язык."
             }
         }
     }
