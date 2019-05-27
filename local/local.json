@@ -7,9 +7,9 @@
             "description": "__FILE__:description_ru.md",
             "profile_btn": "Профиль",
             "back_btn": "◀️ Назад",
-            "more_btn": "Подробрней",
+            "more_btn": "Подробнее",
             "diagnostic": {
-                "model_loading_message": "Нейросеть в прцессе загрузки, попрбуйте снова через несколько минут.",
+                "model_loading_message": "Нейросеть в прцессе загрузки, попробуйте снова через несколько минут.",
                 "skin": {
                     "enter_btn": "Диагностика кожи",
                     "description": "__FILE__:diagnostic/skin/description_ru.md",
