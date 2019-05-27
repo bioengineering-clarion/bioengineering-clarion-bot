@@ -44,8 +44,13 @@ class DiagnosticHandler extends Handler {
                     result.opts = replyMarkup.build();
                     break;
                 case 'back':
-                    Object.assign(callbackData, defaultCallbackData);
-                    result.status = this.status_vocab.repeat;
+                    if (callbackData.value == 'main') {
+                        result = this.defaultAsk(result, context, local);
+                        context.setState({diagnostic: 'wait_skin_photo'});
+                    } else {
+                        Object.assign(callbackData, defaultCallbackData);
+                        result.status = this.status_vocab.repeat;
+                    }
                     break;
             }
             return result;
@@ -57,14 +62,24 @@ class DiagnosticHandler extends Handler {
                     let skinLocalPath = 'bot.diagnostic.skin.predictions';
                     if (context.event.isPhoto || context.event.isDocument) {
                         if (this.skinModel) {
-                            result.text = '';
+                            result.text = 'Результат:\n';
                             let predictions = await this._processSkinPhoto(context.event.photo || context.event.document);
-                            predictions.forEach(pred => {
-                                let percent = (pred.probability * 100).toFixed(2);;
+                            predictions.slice(0, 3).forEach(pred => {
+                                let percentStr = (pred.probability * 100).toFixed(2).toString() + '%';
+                                let symbolsCount = percentStr.length;
+                                percentStr = percentStr + " ".repeat(6 - symbolsCount);
                                 let className = local.get(skinLocalPath + '.' + pred.className);
-                                result.text += `${percent}% - ${className} \n`;
+                                result.text += `${percentStr} - ${className} \n`;
                             });
                             result.status = this.status_vocab.interrapt;
+
+                            let replyMarkup = new this.ReplyMarkup();
+                            replyMarkup.addButton({
+                                handler: 'diagnostic',
+                                text: local.get('bot.back_btn'),
+                                action: 'skin'
+                            });
+                            result.opts = replyMarkup.build();
                             // context.setState({diagnostic: null});
                         } else {
                             result.text = local.get('bot.diagnostic.model_loading_message');
@@ -82,7 +97,7 @@ class DiagnosticHandler extends Handler {
 
     defaultAsk(result, context, local) {
         result.text = local.get('bot.diagnostic.skin.description');
-        result.photo = 'https://i.ibb.co/b1M0zGS/samplepic.jpg'
+        result.photo = 'https://i.ibb.co/Xyv2wpY/IMG-9577.png'
         result.status =  this.status_vocab.interrapt;
         result = this.addFooter(result, context, local);
 

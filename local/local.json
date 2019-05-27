@@ -15,15 +15,14 @@
                     "description": "__FILE__:diagnostic/skin/description_ru.md",
                     "more": "__FILE__:diagnostic/skin/more_ru.md",
                     "predictions": {
-                        "akiec": "Актинические Кератозы (Солнечные Кератозы) или Интраэпителиальная Карцинома (болезнь Боуэна)",
-                        "bcc": "Базально-клеточная Карцинома",
-                        "bkl": "Доброкачественный Кератоз",
-                        "df": "Фиброма Кожи",
-                        "mel": "Меланома",
-                        "nv": "Родинка",
-                        "vasc": "Сосудистое Поражение Кожи"
+                        "akiec": "[Болезнь Боуэна](https://msdmnls.co/2QuvKgp)",
+                        "bcc": "[Базальноклеточный рак кожи](https://msdmnls.co/2VVjQ0q)",
+                        "bkl": "[Себорейный кератоз](https://msdmnls.co/30PW7T9)",
+                        "df": "[Дерматофиброма](https://msdmnls.co/2wpJrnW)",
+                        "mel": "[Меланома](https://msdmnls.co/2QvkmRB)",
+                        "nv": "[Родинка](https://msdmnls.co/2K89jN9)",
+                        "vasc": "[Сосудистое поражение кожи](https://msdmnls.co/2K6AYxX)"
                     }
-
                 }
             },
             "profile": {
