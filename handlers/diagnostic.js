@@ -62,14 +62,14 @@ class DiagnosticHandler extends Handler {
                     let skinLocalPath = 'bot.diagnostic.skin.predictions';
                     if (context.event.isPhoto || context.event.isDocument) {
                         if (this.skinModel) {
-                            result.text = 'Результат:\n';
+                            result.text = 'Вероятность в процентах:\n\n';
                             let predictions = await this._processSkinPhoto(context.event.photo || context.event.document);
                             predictions.slice(0, 3).forEach(pred => {
                                 let percentStr = (pred.probability * 100).toFixed(2).toString() + '%';
                                 let symbolsCount = percentStr.length;
-                                percentStr = percentStr + " ".repeat(6 - symbolsCount);
+                                percentStr = percentStr + "  ".repeat(6 - symbolsCount);
                                 let className = local.get(skinLocalPath + '.' + pred.className);
-                                result.text += `${percentStr} - ${className} \n`;
+                                result.text += `__${percentStr}__ - ${className} \n`;
                             });
                             result.status = this.status_vocab.interrapt;
 

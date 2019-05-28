@@ -15,13 +15,13 @@
                     "description": "__FILE__:diagnostic/skin/description_ru.md",
                     "more": "__FILE__:diagnostic/skin/more_ru.md",
                     "predictions": {
-                        "akiec": "[Болезнь Боуэна](https://msdmnls.co/2QuvKgp)",
-                        "bcc": "[Базальноклеточный рак кожи](https://msdmnls.co/2VVjQ0q)",
-                        "bkl": "[Себорейный кератоз](https://msdmnls.co/30PW7T9)",
-                        "df": "[Дерматофиброма](https://msdmnls.co/2wpJrnW)",
-                        "mel": "[Меланома](https://msdmnls.co/2QvkmRB)",
-                        "nv": "[Родинка](https://msdmnls.co/2K89jN9)",
-                        "vasc": "[Сосудистое поражение кожи](https://msdmnls.co/2K6AYxX)"
+                        "akiec": "`Болезнь Боуэна`. [Подробнее🔗](https://msdmnls.co/2QuvKgp)",
+                        "bcc": "`Базальноклеточный рак кожи`. [Подробнее🔗](https://msdmnls.co/2VVjQ0q)",
+                        "bkl": "Себорейный кератоз. [Подробнее🔗](https://msdmnls.co/30PW7T9)",
+                        "df": "Дерматофиброма. [Подробнее🔗](https://msdmnls.co/2wpJrnW)",
+                        "mel": "`Меланома`. [Подробнее🔗](https://msdmnls.co/2QvkmRB)",
+                        "nv": "Родинка. [Подробнее🔗](https://msdmnls.co/2K89jN9)",
+                        "vasc": "Сосудистое поражение кожи. [Подробнее🔗](https://msdmnls.co/2K6AYxX)"
                     }
                 }
             },
