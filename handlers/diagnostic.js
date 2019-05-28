@@ -1,8 +1,10 @@
 const Handler = require('./handler');
 const tf = require('@tensorflow/tfjs-node');
 const fetch = require('node-fetch');
+const request = require('request');
 const fs = require('fs');
 const {Image, createCanvas, ImageData} = require('canvas');
+const sharp = require('sharp');
 const SKIN_CLASSES = {
     0: 'akiec',
     1: 'bcc',
@@ -62,22 +64,25 @@ class DiagnosticHandler extends Handler {
                     let skinLocalPath = 'bot.diagnostic.skin.predictions';
                     if (context.event.isPhoto || context.event.isDocument) {
                         if (this.skinModel) {
-                            result.text = 'Вероятность в процентах:\n\n';
+                            result.text = local.get('bot.diagnostic.skin.res_prefix') + '\n';
                             let predictions = await this._processSkinPhoto(context.event.photo || context.event.document);
-                            predictions.slice(0, 3).forEach(pred => {
+                            //.slice(0, 3)
+                            predictions.forEach(pred => {
                                 let percentStr = (pred.probability * 100).toFixed(2).toString() + '%';
                                 let symbolsCount = percentStr.length;
                                 percentStr = percentStr + "  ".repeat(6 - symbolsCount);
                                 let className = local.get(skinLocalPath + '.' + pred.className);
                                 result.text += `__${percentStr}__ - ${className} \n`;
                             });
+                            result.text += '\n' + local.get('bot.diagnostic.skin.res_postfix');
                             result.status = this.status_vocab.interrapt;
 
                             let replyMarkup = new this.ReplyMarkup();
                             replyMarkup.addButton({
                                 handler: 'diagnostic',
                                 text: local.get('bot.back_btn'),
-                                action: 'skin'
+                                action: 'back',
+                                value: 'main'
                             });
                             result.opts = replyMarkup.build();
                             // context.setState({diagnostic: null});
@@ -134,14 +139,14 @@ class DiagnosticHandler extends Handler {
         let tensor = await this._photoPathToTensor(photoPath, photoInfo);
         tensor = this._cropTensor(tensor, {height: tensor.shape[0], width: tensor.shape[1]});
 
-        // this._writeToFile(tensor);
+        this._writeToFile(tensor);
         let result = await this._skinPredict(tensor);
 
         return result;
     }
 
     async _skinPredict(tensor) {
-        tensor = tensor.resizeNearestNeighbor([224, 224]);
+        // tensor = tensor.resizeNearestNeighbor([224, 224]);
         tensor = tensor.toFloat()
         let offset = tf.scalar(127.5);
         tensor = tensor.sub(offset)
@@ -172,23 +177,38 @@ class DiagnosticHandler extends Handler {
     }
 
     async _photoPathToTensor(photoPath, photoInfo) {
-        let img = new Image();
         let accessToken = this.config.accessToken;
-        img.src = `https://api.telegram.org/file/bot${accessToken}/${photoPath}`;
-        await new Promise((resolve, reject) => {
-            img.onload = () => resolve()
-            img.onerror = err => reject(err)
-        });
-        // const download = require('image-downloader')
-        // await download.image({
-        //     url: `https://api.telegram.org/file/bot${accessToken}/${photoPath}`,
-        //     dest: 'res.jpg'
-        //   })
-        // TODO: Cache canvas operations.
-        const canvas = createCanvas(img.width, img.height);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        let tensor = tf.browser.fromPixels(canvas);
+        const url = `https://api.telegram.org/file/bot${accessToken}/${photoPath}`;
+        const { pixelData, imageInfo} = sharp().resize({
+                width: this.min_size,
+                height: this.min_size,
+                fit: sharp.fit.cover,
+                // position: sharp.strategy.entropy
+            }).toBuffer({ resolveWithObject: true });
+        const outShape = [1, imageInfo.height, imageInfo.width, 3];
+        let tensor = tf.tidy(() =>
+            tf.tensor4d(pixelData, outShape, "int32")
+        );
+
+        request(url).pipe(pipeline).toFile('output.jpg');
+
+        // let img = new Image();
+        // let accessToken = this.config.accessToken;
+        // img.src = `https://api.telegram.org/file/bot${accessToken}/${photoPath}`;
+        // await new Promise((resolve, reject) => {
+        //     img.onload = () => resolve()
+        //     img.onerror = err => reject(err)
+        // });
+        // // const download = require('image-downloader')
+        // // await download.image({
+        // //     url: `https://api.telegram.org/file/bot${accessToken}/${photoPath}`,
+        // //     dest: 'res.jpg'
+        // //   })
+        // // TODO: Cache canvas operations.
+        // const canvas = createCanvas(img.width, img.height);
+        // const ctx = canvas.getContext('2d');
+        // ctx.drawImage(img, 0, 0);
+        // let tensor = tf.browser.fromPixels(canvas);
 
         return tensor;
     }
