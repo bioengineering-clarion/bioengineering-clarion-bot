@@ -115,7 +115,7 @@ const handlerParams = {
 	config
 }
 const diagnosticParams = Object.assign(handlerParams, {
-	skinModelPath: 'file://vendors/Skin-Lesion-Analyzer/final_model_kaggle_version1/model.json'
+	skinModelPath: 'file://model/model.json'
 });
 let localHandler = new Handlers.LocalHandler(Object.assign(handlerParams, {localJson: Local.localJson}));
 const handlerManager = new HandlerManager([
