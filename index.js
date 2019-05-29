@@ -127,7 +127,8 @@ const handlerManager = new HandlerManager([
 
 bot.setInitialState({
 	lang: null,
-	diagnostic: null
+	diagnostic: null,
+	lastMessId: null
 });
 
 bot.onEvent(async context => {
@@ -154,11 +155,15 @@ bot.onEvent(async context => {
 	result.opts.disable_web_page_preview = true;
 	result.opts.disable_notification = true;
 	//result.text = '[Привет](http://t.com)'
+	var mess = null;
 	if (result.photo) {
 		result.opts.caption = result.text;
-		await context.sendPhoto(result.photo, result.opts);
-	} else {
-		await context.sendMessage(result.text, result.opts);
+		mess = await context.sendPhoto(result.photo, result.opts);
+	} else {;
+		mess = await context.sendMessage(result.text, result.opts);
+	}
+	if (mess) {
+		context.setState({lastMessId: mess.message_id});
 	}
 });
 

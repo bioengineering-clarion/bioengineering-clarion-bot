@@ -136,11 +136,12 @@ class DiagnosticHandler extends Handler {
             photoInfo = photos;
         }
         let photoPath = await this._getPhotoPath(photoInfo);
+        console.time('Ten')
         let tensor = await this._photoPathToTensor(photoPath, photoInfo);
-        tensor = this._cropTensor(tensor, {height: tensor.shape[0], width: tensor.shape[1]});
-
-        this._writeToFile(tensor);
+        // tensor = this._cropTensor(tensor, {height: tensor.shape[0], width: tensor.shape[1]});
+        // this._writeToFile(tensor);
         let result = await this._skinPredict(tensor);
+        console.timeEnd('Ten')
 
         return result;
     }
@@ -177,38 +178,22 @@ class DiagnosticHandler extends Handler {
     }
 
     async _photoPathToTensor(photoPath, photoInfo) {
-        let accessToken = this.config.accessToken;
+        const accessToken = this.config.accessToken;
         const url = `https://api.telegram.org/file/bot${accessToken}/${photoPath}`;
-        const { pixelData, imageInfo} = sharp().resize({
+
+        const pipeline = await sharp().resize({
                 width: this.min_size,
                 height: this.min_size,
                 fit: sharp.fit.cover,
+                // kernel: 'nearest'
                 // position: sharp.strategy.entropy
-            }).toBuffer({ resolveWithObject: true });
-        const outShape = [1, imageInfo.height, imageInfo.width, 3];
-        let tensor = tf.tidy(() =>
-            tf.tensor4d(pixelData, outShape, "int32")
-        );
-
-        request(url).pipe(pipeline).toFile('output.jpg');
-
-        // let img = new Image();
-        // let accessToken = this.config.accessToken;
-        // img.src = `https://api.telegram.org/file/bot${accessToken}/${photoPath}`;
-        // await new Promise((resolve, reject) => {
-        //     img.onload = () => resolve()
-        //     img.onerror = err => reject(err)
-        // });
-        // // const download = require('image-downloader')
-        // // await download.image({
-        // //     url: `https://api.telegram.org/file/bot${accessToken}/${photoPath}`,
-        // //     dest: 'res.jpg'
-        // //   })
-        // // TODO: Cache canvas operations.
-        // const canvas = createCanvas(img.width, img.height);
-        // const ctx = canvas.getContext('2d');
-        // ctx.drawImage(img, 0, 0);
-        // let tensor = tf.browser.fromPixels(canvas);
+            });
+        const imageResp = await request(url).pipe(pipeline);
+        const { data, info }  = await imageResp.raw().toBuffer({ resolveWithObject: true });
+        const outShape = [1, info.height, info.width, 3];
+        const tensor = tf.tidy(() =>
+            tf.tensor4d(data, outShape, "int32")
+        ).squeeze(0);
 
         return tensor;
     }
