@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const utils = require('./utils')
 
 const { TelegramBot, FileSessionStore } = require('bottender');
 const { createServer } = require('bottender/express');
