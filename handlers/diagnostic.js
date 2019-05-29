@@ -3,7 +3,7 @@ const tf = require('@tensorflow/tfjs-node');
 const fetch = require('node-fetch');
 const request = require('request');
 const fs = require('fs');
-const {Image, createCanvas, ImageData} = require('canvas');
+// const {Image, createCanvas, ImageData} = require('canvas');
 const sharp = require('sharp');
 const SKIN_CLASSES = {
     0: 'akiec',
@@ -219,18 +219,18 @@ class DiagnosticHandler extends Handler {
         return tensor;
     }
 
-    async _writeToFile(tensor) {
-        let canvas = createCanvas(tensor.shape[1], tensor.shape[0]);
-        let bytes = await tf.browser.toPixels(tensor);
-        const ctx = canvas.getContext('2d');
-        const imageData = new ImageData(bytes, canvas.width, canvas.height);
-        ctx.putImageData(imageData, 0, 0);
-        var buf = canvas.toBuffer();
-        fs.writeFile('res.jpg', buf,  function(err){
-            if (err) throw err
-            console.log('File saved.')
-        })
-    }
+    // async _writeToFile(tensor) {
+    //     let canvas = createCanvas(tensor.shape[1], tensor.shape[0]);
+    //     let bytes = await tf.browser.toPixels(tensor);
+    //     const ctx = canvas.getContext('2d');
+    //     const imageData = new ImageData(bytes, canvas.width, canvas.height);
+    //     ctx.putImageData(imageData, 0, 0);
+    //     var buf = canvas.toBuffer();
+    //     fs.writeFile('res.jpg', buf,  function(err){
+    //         if (err) throw err
+    //         console.log('File saved.')
+    //     })
+    // }
 
     _cropTensor(tensor, photoInfo) {
         let sliceOffset = Math.max(photoInfo.height, photoInfo.width) - Math.min(photoInfo.height, photoInfo.width);
