@@ -63,20 +63,13 @@ class DiagnosticHandler extends Handler {
                 case 'wait_skin_photo':
                     let skinLocalPath = 'bot.diagnostic.skin.predictions';
                     if (context.event.isPhoto || context.event.isDocument) {
-                        if (this.skinModel) {
-                            result.text = local.get('bot.diagnostic.skin.res_prefix') + '\n';
-                            let predictions = await this._processSkinPhoto(context.event.photo || context.event.document);
-                            //.slice(0, 3)
-                            predictions.forEach(pred => {
-                                let percentStr = (pred.probability * 100).toFixed(2).toString() + '%';
-                                let symbolsCount = percentStr.length;
-                                percentStr = percentStr + "  ".repeat(6 - symbolsCount);
-                                let className = local.get(skinLocalPath + '.' + pred.className);
-                                result.text += `__${percentStr}__ - ${className} \n`;
-                            });
-                            result.text += '\n' + local.get('bot.diagnostic.skin.res_postfix');
+                        if (!this.skinModel) {
+                            result.text = local.get('bot.diagnostic.model_loading_message');
+                            return result;
+                        }
+                        if (context.state.diagnosticCount > 0 && !context.state.inChannel) {
+                            result.text = local.get('bot.join_group');
                             result.status = this.status_vocab.interrapt;
-
                             let replyMarkup = new this.ReplyMarkup();
                             replyMarkup.addButton({
                                 handler: 'diagnostic',
@@ -85,10 +78,34 @@ class DiagnosticHandler extends Handler {
                                 value: 'main'
                             });
                             result.opts = replyMarkup.build();
-                            // context.setState({diagnostic: null});
-                        } else {
-                            result.text = local.get('bot.diagnostic.model_loading_message');
+                            return result;
                         }
+                        result.text = local.get('bot.diagnostic.skin.res_prefix') + '\n';
+                        let predictions = await this._processSkinPhoto(context.event.photo || context.event.document);
+                        //.slice(0, 3)
+                        predictions.forEach(pred => {
+                            let percentStr = (pred.probability * 100).toFixed(2).toString() + '%';
+                            if (percentStr == "100.00%") {
+                                percentStr = "100%"
+                            }
+                            let symbolsCount = percentStr.length;
+                            percentStr = percentStr + "  ".repeat(6 - symbolsCount);
+                            let className = local.get(skinLocalPath + '.' + pred.className);
+                            result.text += `__${percentStr}__ - ${className} \n`;
+                        });
+                        result.text += '\n' + local.get('bot.diagnostic.skin.res_postfix');
+                        result.status = this.status_vocab.interrapt;
+
+                        let replyMarkup = new this.ReplyMarkup();
+                        replyMarkup.addButton({
+                            handler: 'diagnostic',
+                            text: local.get('bot.back_btn'),
+                            action: 'back',
+                            value: 'main'
+                        });
+                        result.opts = replyMarkup.build();
+                        context.setState({diagnosticCount: context.state.diagnosticCount + 1});
+
                         return result;
                     } else {
                         return this.defaultAsk(result, context, local);
@@ -103,7 +120,7 @@ class DiagnosticHandler extends Handler {
     defaultAsk(result, context, local) {
         result.text = local.get('bot.diagnostic.skin.description');
         result.photo = 'https://i.ibb.co/Xyv2wpY/IMG-9577.png'
-        result.status =  this.status_vocab.interrapt;
+        result.status = this.status_vocab.interrapt;
         result = this.addFooter(result, context, local);
 
         return result;
@@ -124,6 +141,10 @@ class DiagnosticHandler extends Handler {
         result.opts = replyMarkup.build();
 
         return result
+    }
+
+    validation(result, context, local) {
+
     }
 
     async _processSkinPhoto(photos) {

@@ -120,6 +120,10 @@ const diagnosticParams = Object.assign(handlerParams, {
 let localHandler = new Handlers.LocalHandler(Object.assign(handlerParams, {localJson: Local.localJson}));
 const handlerManager = new HandlerManager([
 	localHandler,
+	new Handlers.ValidationHandler(Object.assign(handlerParams, {
+		channelName: '@bioengineering_clarion_channel',
+		channelId: '-1001183795472'
+	})),
 	new Handlers.DiagnosticHandler(diagnosticParams),
 	new Handlers.ProfileHandler(Object.assign(handlerParams, {settings: [localHandler]})),
 	new Handlers.DefaultHandler(handlerParams)
@@ -128,7 +132,9 @@ const handlerManager = new HandlerManager([
 bot.setInitialState({
 	lang: null,
 	diagnostic: null,
-	lastMessId: null
+	lastMessId: null,
+	diagnosticCount: 0,
+	inChannel: null
 });
 
 bot.onEvent(async context => {
@@ -144,7 +150,8 @@ bot.onEvent(async context => {
 	let payload = event ? event.payload : '';
 	if (payload) {
 		callbackData = ReplyMarkup.parseCallbackData(payload);
-	} else if (!context.state.lang) {
+	}
+	if (!context.state.lang && (callbackData.handler !== 'local')) {
 		callbackData.handler = 'local';
 		callbackData.action = 'open';
 	}

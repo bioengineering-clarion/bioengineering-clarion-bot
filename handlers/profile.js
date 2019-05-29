@@ -28,7 +28,13 @@ class ProfileHandler extends Handler {
 				let [handlerName, value] = callbackData.value.split('__');
 				setting = this.settings.find(el => el.name === handlerName);
 				setting.setSettingValue(context, value);
-				result = this.defaultAsk(result, context, local);
+				// result = this.defaultAsk(result, context, local);
+				Object.assign(callbackData, {
+					handler: this.name,
+					action: 'open'
+				});
+				result.status = this.status_vocab.repeat;
+				return result
 				break;
 		}
 		result = this.addFooter(result, context, local);
