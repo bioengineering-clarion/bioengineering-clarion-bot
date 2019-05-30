@@ -15,7 +15,7 @@ class ValidationHandler extends Handler {
 
 	async _isInChannel(result, context, local) {
 		let userId = context.session.user.id;
-		result = await context._client.getChatMember(this.channelId, userId);
+		result = await context._client.getChatMember(this.channelName, userId);
 		if (result.status == 'left') {
 			context.setState({inChannel: false});
 		} else {
