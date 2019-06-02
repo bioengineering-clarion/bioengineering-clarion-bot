@@ -4,6 +4,12 @@
         "change_lang_btn": "Змінити мову",
         "bot": {
             "id": "ua",
+            "make_me_better": {
+                "text": "Оцініть висновок нейронної мережі.",
+                "good_btn": "Імовірно",
+                "bad_btn": "Сумнівно",
+                "undef_btn": "Вагаюсь відповісти"
+            },
             "description": "__FILE__:description_ua.md",
             "profile_btn": "Профіль",
             "back_btn": "◀️ Назад",
@@ -12,6 +18,7 @@
             "diagnostic": {
                 "model_loading_message": "Нейронна мережа в процесі завантаження, спробуйте знову через кілька хвилин.",
                 "skin": {
+                    "cant_proc": "Не можу обробити зображення, спробуйте інше.",
                     "enter_btn": "Діагностика шкіри",
                     "description": "__FILE__:diagnostic/skin/description_ua.md",
                     "more": "__FILE__:diagnostic/skin/more_ua.md",
@@ -39,6 +46,12 @@
         "change_lang_btn": "Сменить язык",
         "bot": {
             "id": "ru",
+            "make_me_better": {
+                "text": "Оцените вывод неиронной сети.",
+                "good_btn": "Правдоподобно",
+                "bad_btn": "Сомнительно",
+                "undef_btn": "Сложно ответить"
+            },
             "description": "__FILE__:description_ru.md",
             "profile_btn": "Профиль",
             "back_btn": "◀️ Назад",
@@ -47,6 +60,7 @@
             "diagnostic": {
                 "model_loading_message": "Нейросеть в процессе загрузки, попробуйте снова через несколько минут.",
                 "skin": {
+                    "cant_proc": "Не могу обработать изображение, попробуйте другое.",
                     "enter_btn": "Диагностика кожи",
                     "description": "__FILE__:diagnostic/skin/description_ru.md",
                     "more": "__FILE__:diagnostic/skin/more_ru.md",

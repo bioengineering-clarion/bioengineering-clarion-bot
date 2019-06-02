@@ -46,18 +46,22 @@ class DiagnosticHandler extends Handler {
                     result.opts = replyMarkup.build();
                     break;
                 case 'back':
-                    if (callbackData.value == 'main') {
-                        result = this.defaultAsk(result, context, local);
-                        context.setState({diagnostic: 'wait_skin_photo'});
-                    } else {
-                        Object.assign(callbackData, defaultCallbackData);
-                        result.status = this.status_vocab.repeat;
-                    }
+                    Object.assign(callbackData, defaultCallbackData);
+                    result.status = this.status_vocab.repeat;
                     break;
+                case 'feedback':
+                    let feedbackValue = callbackData.value;
+                    let statistic = context.state.statistic;
+                    statistic[feedbackValue] = statistic[feedbackValue] + 1;
+                    result = this.defaultAsk(result, context, local);
+                    context.setState({statistic: statistic});
+                    context.setState({diagnostic: 'wait_skin_photo'});
+
             }
             return result;
         }
 
+        var predictions;
         if (context.state.diagnostic) {
             switch (context.state.diagnostic) {
                 case 'wait_skin_photo':
@@ -67,22 +71,20 @@ class DiagnosticHandler extends Handler {
                             result.text = local.get('bot.diagnostic.model_loading_message');
                             return result;
                         }
+                        result.status = this.status_vocab.interrapt;
                         if (context.state.diagnosticCount > 0 && !context.state.inChannel) {
                             result.text = local.get('bot.join_group');
-                            result.status = this.status_vocab.interrapt;
-                            let replyMarkup = new this.ReplyMarkup();
-                            replyMarkup.addButton({
-                                handler: 'diagnostic',
-                                text: local.get('bot.back_btn'),
-                                action: 'back',
-                                value: 'main'
-                            });
-                            result.opts = replyMarkup.build();
+                            result = this._addButtoBack(result, context, local);
                             return result;
                         }
                         result.text = local.get('bot.diagnostic.skin.res_prefix') + '\n';
-                        let predictions = await this._processSkinPhoto(context.event.photo || context.event.document);
-                        //.slice(0, 3)
+                        try {
+                            predictions = await this._processSkinPhoto(context.event.photo || context.event.document);
+                        } catch(err) {
+                            result.text = local.get('bot.diagnostic.skin.cant_proc');
+                            result = this._addButtoBack(result, context, local);
+                            return result;
+                        }
                         predictions.forEach(pred => {
                             let percentStr = (pred.probability * 100).toFixed(2).toString() + '%';
                             if (percentStr == "100.00%") {
@@ -94,16 +96,7 @@ class DiagnosticHandler extends Handler {
                             result.text += `__${percentStr}__ - ${className} \n`;
                         });
                         result.text += '\n' + local.get('bot.diagnostic.skin.res_postfix');
-                        result.status = this.status_vocab.interrapt;
-
-                        let replyMarkup = new this.ReplyMarkup();
-                        replyMarkup.addButton({
-                            handler: 'diagnostic',
-                            text: local.get('bot.back_btn'),
-                            action: 'back',
-                            value: 'main'
-                        });
-                        result.opts = replyMarkup.build();
+                        result = this._addPredictionAction(result, context, local);
                         context.setState({diagnosticCount: context.state.diagnosticCount + 1});
 
                         return result;
@@ -143,8 +136,43 @@ class DiagnosticHandler extends Handler {
         return result
     }
 
-    validation(result, context, local) {
 
+    _addPredictionAction(result, context, local) {
+        let replyMarkup = new this.ReplyMarkup();
+        result.text += '\n\n' + local.get('bot.make_me_better.text');
+        replyMarkup.addButton({
+            handler: 'diagnostic',
+            text: local.get('bot.make_me_better.good_btn'),
+            action: 'feedback',
+            value: 'correct'
+        });
+        replyMarkup.addButton({
+            handler: 'diagnostic',
+            text: local.get('bot.make_me_better.bad_btn'),
+            action: 'feedback',
+            value: 'uncorrect'
+        });
+        replyMarkup.nextLine();
+        replyMarkup.addButton({
+            handler: 'diagnostic',
+            text: local.get('bot.back_btn'),
+            action: 'skin'
+        });
+        result.opts = replyMarkup.build();
+
+        return result;
+    }
+
+    _addButtoBack(result, context, local) {
+        let replyMarkup = new this.ReplyMarkup();
+        replyMarkup.addButton({
+            handler: 'diagnostic',
+            text: local.get('bot.back_btn'),
+            action: 'skin'
+        });
+        result.opts = replyMarkup.build();
+
+        return result
     }
 
     async _processSkinPhoto(photos) {

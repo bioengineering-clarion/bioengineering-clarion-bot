@@ -133,6 +133,10 @@ bot.setInitialState({
 	diagnostic: null,
 	lastMessId: null,
 	diagnosticCount: 0,
+	statistic: {
+		correct: 0,
+		uncorrect: 0
+	},
 	inChannel: null
 });
 
@@ -173,14 +177,14 @@ bot.onEvent(async context => {
 	}
 });
 
-// bot.createLongPollingRuntime({
-// 	limit: 10, // Limits the number of updates to be retrieved. Defaults to 100.
-// 	timeout: 0, // Timeout in seconds for long polling. Defaults to 0.
-// 	allowed_updates: ['message', 'callback_query'], // List the types of updates you want your bot to receive
-// });
-
-const server = createServer(bot);
-
-server.listen(5000, () => {
-	console.log('server is running on 5000 port...');
+bot.createLongPollingRuntime({
+	limit: 10, // Limits the number of updates to be retrieved. Defaults to 100.
+	timeout: 0, // Timeout in seconds for long polling. Defaults to 0.
+	allowed_updates: ['message', 'callback_query'], // List the types of updates you want your bot to receive
 });
+
+// const server = createServer(bot);
+
+// server.listen(5000, () => {
+// 	console.log('server is running on 5000 port...');
+// });
