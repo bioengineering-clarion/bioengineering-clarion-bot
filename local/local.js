@@ -24,7 +24,7 @@ class Local {
         for (let i = 0; i < localPathList.length; i += 1) {
             localValue = localValue[localPathList[i]];
         }
-        if (!localValue) {
+        if (typeof localValue === 'undefined') {
             throw "Local path: " + string + " - not found.";
         }
         if ( localValue.includes(this.filePrefix) ) {

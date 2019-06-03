@@ -77,7 +77,7 @@ class DiagnosticHandler extends Handler {
                             result = this._addButtoBack(result, context, local);
                             return result;
                         }
-                        result.text = local.get('bot.diagnostic.skin.res_prefix') + '\n';
+                        result.text = local.get('bot.diagnostic.skin.res_prefix');
                         try {
                             predictions = await this._processSkinPhoto(context.event.photo || context.event.document);
                         } catch(err) {
@@ -139,7 +139,7 @@ class DiagnosticHandler extends Handler {
 
     _addPredictionAction(result, context, local) {
         let replyMarkup = new this.ReplyMarkup();
-        result.text += '\n\n' + local.get('bot.make_me_better.text');
+        result.text += local.get('bot.make_me_better.text');
         replyMarkup.addButton({
             handler: 'diagnostic',
             text: local.get('bot.make_me_better.good_btn'),
